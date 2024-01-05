@@ -12,16 +12,18 @@ male(jim).
 male(keith).
 male(brian).
 female(ann).
-female(mary).
+female(mary).                                                                                                                                                                                                                                                                                                    %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
+last_element(X, [X]).
 female(sylvia).
 
 % Predicate to check if two people share at least one parent
 halfsister(X, Y) :-
     parent(Z, X),  % Z is the common parent
     parent(Z, Y),
-    X \= Y,        % X and Y are different individuals
+    X \= Y,        % X and Y are different individuals                                                                                                                                                                                                                              
+    X \= Y,        % X and Y are different individuals                                                                                                                                                                                                                              
     \+ sibling(X, Y).  % X and Y are not full siblings
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
 % Predicate to check if two people are full siblings
 sibling(X, Y) :-
     parent(P, X),
@@ -32,7 +34,7 @@ sibling(X, Y) :-
 
 % Rules for defining grandparents
 grandparent(GP, GC) :-
-    parent(GP, Parent),
+    parent(GP, Parent),                                                                                                                                                                                                                                                                                      %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
     parent(Parent, GC).
 
 % Rules for defining aunts and uncles
@@ -44,4 +46,4 @@ aunt(Aunt, NieceNephew) :-
 uncle(Uncle, NieceNephew) :-
     parent(Parent, NieceNephew),
     sibling(Uncle, Parent),
-    male(Uncle).
+    male(Uncle).                                                                                                                                                                                                                                                                                                                                                                                                        %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%

@@ -1,7 +1,7 @@
 % %%% To find last element of a list
 
 % Base Case :
-% Last element of a one element list is the element itself
+% Last element of a one element list is the element itself                                                                                                                                                                                                                                                                                                          %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
 last_element(X, [X]).
 % Recursive rule: 
 % Remove the head of the list and find the last element in the tail.
@@ -40,7 +40,8 @@ palindrome([_]).
 % Recursive rule: Check if the first and last elements are the same,
 % and recursively check if the remaining sublist is a palindrome.
 palindrome([X|Xs]) :-
-    append_lists(Inner, [X], Xs),  % Split the list into Inner and [X]
+    append_lists(Inner, [X], Xs),  % Split the list into Inner and [X]                                                                                                                                                                                                                                                                                                                                                                                           %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
+last_element(X, [X]).
     reverse_list(Inner, ReversedInner),
     append_lists([X], ReversedInner, [X|Xs]).
 
@@ -70,7 +71,8 @@ sum_and_avg([H|T], Sum, Avg) :-
     Avg is Sum / (1 + TailAvg).
 
 % %%% GCD of two numbers
-
+                                                                                                                                                                                                                                                                                                                                                                                                 %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
+last_element(X, [X]).
 % Base case: 
 % GCD of any number with 0 is the number itself.
 gcd(X, 0, X).
@@ -143,7 +145,8 @@ goldbach_helper(N, P, Result) :-
     next_prime(P, NextPrime),
     goldbach_helper(N, NextPrime, Result).
 
-% Predicate to find the next prime number
+% Predicate to find the next prime number                                                                                                                                                                                                                                                                                                                                                                                                %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
+last_element(X, [X]).
 next_prime(P, NextPrime) :-
     P1 is P + 2,
     is_prime(P1),

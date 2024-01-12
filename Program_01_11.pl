@@ -41,7 +41,7 @@ palindrome([_]).
 % and recursively check if the remaining sublist is a palindrome.
 palindrome([X|Xs]) :-
     append_lists(Inner, [X], Xs),  % Split the list into Inner and [X]                                                                                                                                                                                                                                                                                                                                                                                           %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
-last_element(X, [X]).
+    last_element(X, [X]).
     reverse_list(Inner, ReversedInner),
     append_lists([X], ReversedInner, [X|Xs]).
 
@@ -66,14 +66,13 @@ sum_and_avg([], 0, 0).
 % calculate the sum and average of the tail of the list,
 % and add the head to the sum.
 sum_and_avg([H|T], Sum, Avg) :-
-    sum_and_avg(T, TailSum, TailAvg),
+    sum_and_avg(T, TailSum, _),
     Sum is H + TailSum,
     length(T, TailLength),
     Avg is Sum / (TailLength + 1).
 
 % %%% GCD of two numbers
-                                                                                                                                                                                                                                                                                                                                                                                                 %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
-last_element(X, [X]).
+
 % Base case: 
 % GCD of any number with 0 is the number itself.
 gcd(X, 0, X).
@@ -89,24 +88,18 @@ gcd(X, Y, Result) :-
 
 % %%% Prime or Not Prime
 
-% Base case: 0 and 1 are not prime.
-is_prime(0) :- false.
-is_prime(1) :- false.
+divisible(X,Y):-
+    N is Y*Y,
+    N =< X,
+    X mod Y =:= 0.
 
-% Predicate to check if N is prime.
-is_prime(N) :-
-    N > 1,
-    is_prime_helper(N, 2).
+divisible(X,Y):-
+    Y < X,
+    Y1 is Y+1,
+    divisible(X,Y1).
 
-% Helper predicate to check if N is divisible by any number from Start to N.
-is_prime_helper(N, Start) :-
-    Start > sqrt(N), % Only need to check up to the square root of N.
-    !.
-
-is_prime_helper(N, Start) :-
-    N mod Start =\= 0,
-    Next is Start + 1,
-    is_prime_helper(N, Next).
+isprime(X):-
+    Y is 2, X > 1, \+divisible(X,Y).
 
 
 % %%% Prime Factors
@@ -147,7 +140,7 @@ goldbach_helper(N, P, Result) :-
     goldbach_helper(N, NextPrime, Result).
 
 % Predicate to find the next prime number                                                                                                                                                                                                                                                                                                                                                                                                %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
-last_element(X, [X]).
+
 next_prime(P, NextPrime) :-
     P1 is P + 2,
     is_prime(P1),

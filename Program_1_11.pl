@@ -68,7 +68,8 @@ sum_and_avg([], 0, 0).
 sum_and_avg([H|T], Sum, Avg) :-
     sum_and_avg(T, TailSum, TailAvg),
     Sum is H + TailSum,
-    Avg is Sum / (1 + TailAvg).
+    length(T, TailLength),
+    Avg is Sum / (TailLength + 1).
 
 % %%% GCD of two numbers
                                                                                                                                                                                                                                                                                                                                                                                                  %%% K2E7: MADE BY SRIPARNO GANGULY 2020CSB004 %%%
@@ -168,6 +169,21 @@ fibonacci(N, Result) :-
     N > 1,
     N1 is N - 1,
     N2 is N - 2,
-    fibonacci(N1, Fib1),
-    fibonacci(N2, Fib2),
-    Result is Fib1 + Fib2.
+    fibonacci(N1, F1),
+    fibonacci(N2, F2),
+    Result is F1 + F2.
+
+% Generate Fibonacci List
+generate_fibonacci(0, []).
+
+generate_fibonacci(N, FibonacciList) :-
+    N > 0,
+    generate_fibonacci_list(N, 1, FibonacciList).
+
+generate_fibonacci_list(0, _, []).
+
+generate_fibonacci_list(N, CurrentIndex, [F | Rest]) :-
+    fibonacci(CurrentIndex, F),
+    N1 is N - 1,
+    NextIndex is CurrentIndex + 1,
+    generate_fibonacci_list(N1, NextIndex, Rest).

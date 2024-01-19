@@ -62,7 +62,17 @@ average(X, A) :-
     A is TotalPrice / NumSmoothies.
 
 %% Sub-Problem-e %%
-% Helper predicate to check if a fruit is an ingredient in a smoothie
+% Helper predicate to extract smoothie names from a list of smoothies
+extract_smoothie_names([], []).
+extract_smoothie_names([smoothie(Name, _, _) | Rest], [Name | Names]) :-
+    extract_smoothie_names(Rest, Names).
+
+% Main smoothies_in_store predicate
+smoothies_in_store(X, L) :-
+    store(X, _, Smoothies),
+    extract_smoothie_names(Smoothies, L).
+
+%% Sub-Problem-f %%
 % Helper predicate to check if a fruit is an ingredient of a given smoothie
 fruit_in_smoothie(Fruit, smoothie(_, Ingredients, _)) :-
     member(Fruit, Ingredients).

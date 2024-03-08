@@ -21,15 +21,10 @@ is_sublist([], _).
 
 % Predicate to check if L1 is a sublist of L2
 is_sublist([X|Xs], [X|Ys]) :- % Match the first element
-    is_sublist_helper(Xs, Ys). % Check the rest
+    is_sublist(Xs, Ys). % Check the rest
 
 is_sublist(L, [_|Ys]) :- % Skip the first element of the second list
     is_sublist(L, Ys).
-
-% Helper predicate to check if the remaining elements of L1 are a sublist of L2
-is_sublist_helper([], _).
-is_sublist_helper([X|Xs], [X|Ys]) :-
-    is_sublist_helper(Xs, Ys).
 
 %%% Problem 3 %%%
 % Helper predicate to check if an element is a member of a list

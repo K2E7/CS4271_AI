@@ -6,7 +6,7 @@ store(best_smoothies, [alan,john,mary],
 store(all_smoothies, [keith,mary], 
     [ smoothie(pinacolada, [orange, pineapple, coconut], 2),  
       smoothie(green, [orange, banana, kiwi], 5), 
-      smoothie(purple, [orange, blueberry, strawberry], 2),  
+      smoothie(purple, [orange, blueberry, strawberry], 2),   
       smoothie(smooth, [orange, banana, mango],1) ]). 
 
 store(smoothies_galore, [heath,john,michelle], 

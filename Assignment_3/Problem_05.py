@@ -6,17 +6,10 @@ import copy
 from collections import deque
 
 def evaluate(board):
-<<<<<<< HEAD
     """
     Evaluate the current state of the Tic Tac Toe board.
     Returns 1 if the computer wins, -1 if the player wins, 0 for a draw, and None if the game is ongoing.
     """
-=======
-    
-    # Evaluate the current state of the Tic Tac Toe board.
-    # Returns 1 if the computer wins, -1 if the player wins, 0 for a draw, and None if the game is ongoing.
-    
->>>>>>> 1448b8802d556f912a206b102c3c545393df2714
     for i in range(3):
         # Check rows and columns
         if board[i][0] == board[i][1] == board[i][2] != "":
@@ -38,15 +31,9 @@ def evaluate(board):
     return 0
 
 def bfs(board, depth, maximizing_player):
-<<<<<<< HEAD
     """
     Perform a breadth-first search to evaluate the game tree and determine the most optimal move.
     """
-=======
-
-    # Perform a breadth-first search to evaluate the game tree and determine the most optimal move.
-
->>>>>>> 1448b8802d556f912a206b102c3c545393df2714
     queue = deque([(board, maximizing_player, depth)])
     while queue:
         current_board, current_player, current_depth = queue.popleft()
@@ -64,15 +51,9 @@ def bfs(board, depth, maximizing_player):
             queue.append((new_board, not current_player, current_depth - 1))
 
 def make_move(board):
-<<<<<<< HEAD
     """
     Make a move for the computer player using BFS to find the most optimal move.
     """
-=======
-
-    # Make a move for the computer player using BFS to find the most optimal move.
- 
->>>>>>> 1448b8802d556f912a206b102c3c545393df2714
     best_score = float('-inf')
     best_move = None
     for i in range(3):
@@ -97,18 +78,11 @@ class TicTacToe:
         self.init_game()
 
     def init_game(self):
-<<<<<<< HEAD
         unit = simpledialog.askstring("Select Unit", "Choose your unit:", parent=self.root, 
                                       show="info", choices=["X", "O"])
         if unit:
             self.current_player = unit
             self.computer_player = "O" if unit == "X" else "X"
-=======
-        unit = simpledialog.askstring("Select Unit", "Choose your unit: 'X' or 'O'", parent=self.root)
-        if unit and unit.upper() in ["X", "O"]:
-            self.current_player = unit.upper()
-            self.computer_player = "O" if unit.upper() == "X" else "X"
->>>>>>> 1448b8802d556f912a206b102c3c545393df2714
             self.create_board()
             if self.current_player == self.computer_player:
                 self.computer_move()
@@ -170,15 +144,9 @@ class TicTacToe:
                 self.buttons[i][j].config(text="")
 
     def computer_move(self):
-<<<<<<< HEAD
         """
         Make a move for the computer player.
         """
-=======
-    
-        # Make a move for the computer player.
-        
->>>>>>> 1448b8802d556f912a206b102c3c545393df2714
         best_move = make_move(self.board)
         if best_move:
             row, col = best_move

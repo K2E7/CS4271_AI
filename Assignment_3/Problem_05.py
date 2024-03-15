@@ -44,7 +44,7 @@ def bfs(board, depth, maximizing_player):
                 return current_depth - 10
             else:
                 return 0
-        empty_cells = [(i, j) for i in range(3) for j in range(3) if current_board[i][j] == ""]
+        empty_cells = [(i, j) for i in range(3) for j in range(3) if current_board[i][j] == ""] # Generating all possible moves for current board.
         for i, j in empty_cells:
             new_board = copy.deepcopy(current_board)
             new_board[i][j] = "O" if current_player else "X"

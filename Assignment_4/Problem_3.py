@@ -1,95 +1,101 @@
-def solve(missionaries, cannibals, boat_location):
-  """
-  This function iteratively explores possible moves and returns a list of steps
-  to get all missionaries and cannibals across the river.
+from heapq import heappop, heappush
+import tkinter as tk
+from tkinter import ttk
 
-  Args:
-      missionaries: Number of missionaries on the starting side.
-      cannibals: Number of cannibals on the starting side.
-      boat_location: 'Start' or 'End' indicating the current location of the boat.
 
-  Returns:
-      A list of strings representing the steps to solve the puzzle, 
-      or None if there's no solution.
-  """
-  # Define the initial state as a dictionary
-  state = {'missionaries_start': missionaries, 'cannibals_start': cannibals, 'boat': boat_location}
-  visited_states = set()  # Keep track of visited states to avoid loops
-  solution_queue = [state]  # Queue to store states for exploration
+def heuristic(state):
+    # Define a heuristic function to estimate the cost from a state to the goal state
+    m_left, c_left, b_left, m_right, c_right, b_right = state
+    return m_left + c_left  # Example heuristic: total number of missionaries and cannibals on the left bank
 
-  while solution_queue:
-    current_state = solution_queue.pop(0)
-    visited_states.add(tuple(current_state.values()))  # Convert state to hashable tuple
-
-    # Check if goal state is reached
-    if current_state['missionaries_start'] == 0 and current_state['cannibals_start'] == 0 and current_state['boat'] == 'End':
-      # Reconstruct the solution path from visited states
-      solution = []
-      while current_state:
-        # Find the previous state that led to the current state
-        for prev_state in visited_states:
-          if current_state != prev_state and all(current_state[key] == prev_state[key] + (val if key in ('boat', ) else -val) for key, val in current_state.items()):
-            if prev_state in solution_queue:
-              solution_queue.remove(prev_state)
-            solution.append(get_move_description(current_state, prev_state))
-            current_state = prev_state
-            break
-      return solution[::-1]  # Reverse the solution path
-
-    # Generate all possible valid moves for the current state
-    for move in generate_moves(current_state):
-      new_state = make_move(current_state.copy(), move)
-      if new_state not in visited_states:
-        solution_queue.append(new_state)
-
-  # No solution found
-  return None
+def valid_state(m, c):
+    if m < 0 or c < 0 or m > 3 or c > 3:
+        return False
+    return (m >= c or m == 0) and (3 - m >= 3 - c or 3 - m == 0)  # Ensure no more cannibals than missionaries on either side
 
 def generate_moves(state):
-  """
-  This function generates all valid combinations of missionaries and cannibals
-  that can be transported in the boat based on the current state.
+    m_left, c_left, b_left, m_right, c_right, b_right = state
+    moves = []
+    if b_left:
+        for i in range(3):
+            for j in range(3):
+                if i + j >= 1 and i + j <= 2:
+                    if valid_state(m_left - i, c_left - j) and valid_state(m_right + i, c_right + j):
+                        moves.append((i, j, "from left to right"))
+    else:
+        for i in range(3):
+            for j in range(3):
+                if i + j >= 1 and i + j <= 2:
+                    if valid_state(m_left + i, c_left + j) and valid_state(m_right - i, c_right - j):
+                        moves.append((i, j, "from right to left"))
+    return moves
 
-  Args:
-      state: A dictionary representing the current state (missionaries, cannibals, boat location).
+def solve():
+    start_state = (3, 3, 1, 0, 0, 0)
+    goal_state = (0, 0, 0, 3, 3, 1)
+    heap = [(heuristic(start_state), 0, start_state, [])]  # Use a priority queue based on heuristic value
+    visited = set()
 
-  Returns:
-      A list of dictionaries representing valid moves (updated state after the move).
-  """
-  moves = []
-  boat_location = state['boat']
-  missionaries_on_side = state[f'missionaries_{boat_location}']
-  cannibals_on_side = state[f'cannibals_{boat_location}']
-  
-  # Add all combinations from 1 to capacity (2) for both missionaries and cannibals
-  for m in range(1, min(missionaries_on_side, 3) + 1):
-    for c in range(max(0, m - 1), min(cannibals_on_side, 3) + 1):
-      # Ensure missionaries are not outnumbered (except when returning to starting side)
-      if missionaries_on_side - m >= cannibals_on_side - c or boat_location == 'End':
-        new_state = {
-          f'missionaries_{boat_location}': missionaries_on_side - m,
-          f'cannibals_{boat_location}': cannibals_on_side - c,
-          'boat': 'End' if boat_location == 'Start' else 'Start'
-        }
-        moves.append(new_state)
-  return moves
+    while heap:
+        _, cost, state, path = heappop(heap)
+        if state == goal_state:
+            return path
+        if state in visited:
+            continue
+        visited.add(state)
+        moves = generate_moves(state)
+        for move in moves:
+            new_state = None
+            if state[2]:  # If boat is on the left
+                new_state = (state[0] - move[0], state[1] - move[1], 0, state[3] + move[0], state[4] + move[1], 1)
+            else:  # If boat is on the right
+                new_state = (state[0] + move[0], state[1] + move[1], 1, state[3] - move[0], state[4] - move[1], 0)
+            if new_state not in visited:
+                new_cost = cost + 1  # Uniform cost in this case
+                priority = new_cost + heuristic(new_state)  # A* cost function
+                heappush(heap, (priority, new_cost, new_state, path + [move]))
 
-def get_move_description(current_state, previous_state):
-  """
-  This function constructs a string describing the move taken.
-  """
-  missionaries_moved = current_state['missionaries_start'] - previous_state['missionaries_start']
-  cannibals_moved = current_state['cannibals_start'] - previous_state['cannibals_start']
-  move_description = f"{missionaries_moved}M {cannibals_moved}C"
-  return move_description
+    return None
 
-# Example usage
-solution = solve(3, 3, 'Start')
+def display_solution(solution):
+    root = tk.Tk()
+    root.title("Missionaries and Cannibals Solution")
 
+    table = ttk.Treeview(root, columns=("Step", "Missionaries", "Cannibals", "Direction", "Missionaries Left", "Cannibals Left", "Missionaries Right", "Cannibals Right"), show="headings")
+    table.heading("Step", text="Step")
+    table.heading("Missionaries", text="Missionaries")
+    table.heading("Cannibals", text="Cannibals")
+    table.heading("Direction", text="Direction")
+    table.heading("Missionaries Left", text="Missionaries Left")
+    table.heading("Cannibals Left", text="Cannibals Left")
+    table.heading("Missionaries Right", text="Missionaries Right")
+    table.heading("Cannibals Right", text="Cannibals Right")
+
+    state = (3, 3, 1, 0, 0, 0)  # Initial state
+    for step, move in enumerate(solution):
+        m_left, c_left, b_left, m_right, c_right, b_right = state
+        if move[2] == 'from left to right':
+            m_left -= move[0]
+            c_left -= move[1]
+            m_right += move[0]
+            c_right += move[1]
+        else:
+            m_left += move[0]
+            c_left += move[1]
+            m_right -= move[0]
+            c_right -= move[1]
+        missionaries_left = f"{m_left} {'→' if move[2] == 'from left to right' else '←'} {m_right}"
+        cannibals_left = f"{c_left} {'→' if move[2] == 'from left to right' else '←'} {c_right}"
+        table.insert("", "end", values=(step + 1, missionaries_left, cannibals_left, move[2], m_left, c_left, m_right, c_right))
+        state = (m_left, c_left, b_left, m_right, c_right, b_right)
+
+    table.pack(padx=10, pady=10)
+
+    root.mainloop()
+
+# Assuming solution is already computed
+solution = solve()
 if solution:
-  print("Solution found in", len(solution), "steps:")
-  for step in solution:
-    print(step)
+    display_solution(solution)
 else:
-  print("No solution found!")
-
+    print("No solution found.")

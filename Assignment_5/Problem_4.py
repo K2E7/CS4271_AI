@@ -1,41 +1,65 @@
-def transfer_family_optimized(transfer_times, max_transfer_time):
-    # Sort the transfer_times in descending order
-    transfer_times.sort(reverse=True)
+from collections import deque
 
-    # Initialize variables
-    left_side = transfer_times[:]
-    right_side = []
-    time_elapsed = 0
+class State:
+    def __init__(self, people, boat, time):
+        self.people = people
+        self.boat = boat
+        self.time = time
 
-    # Logic for crossing the river
-    while left_side:
-        # Cross the fastest person and the second fastest person
-        if len(left_side) >= 2:
-            if left_side[0] + left_side[1] + time_elapsed <= max_transfer_time:
-                right_side.extend([left_side.pop(0), left_side.pop(0)])
-                time_elapsed += max(right_side[-2], right_side[-1])
-            else:
-                break
-        else:
-            # Cross the remaining person
-            if left_side[0] + time_elapsed <= max_transfer_time:
-                right_side.append(left_side.pop(0))
-                time_elapsed += right_side[-1]
-            else:
-                break
+    def __eq__(self, other):
+        return self.people == other.people and self.boat == other.boat
 
-        # Return the fastest person back to the left side
-        left_side.append(right_side.pop(0))
-        time_elapsed += left_side[-1]
+    def __hash__(self):
+        return hash((tuple(self.people), tuple(self.boat)))
 
-    return time_elapsed if not left_side else -1  # Return -1 if time constraint is exceeded
+def is_valid(state):
+    left_bank = state.people[:]
+    right_bank = [1, 3, 6, 8, 12]
+    for person in state.boat:
+        if person not in left_bank:
+            return False
+        left_bank.remove(person)
+        right_bank.append(person)
+    return all(p in right_bank for p in left_bank)
 
-# Family member travel times in seconds
-transfer_times = [1, 3, 6, 8, 12]
-max_transfer_time = 30  # Maximum time allowed for transfer
+def get_next_states(state):
+    next_states = []
+    possible_moves = [(p1, p2) for p1 in state.people for p2 in state.people if p1 != p2]
+    for move in possible_moves:
+        new_people = state.people[:]
+        new_boat = state.boat[:]
+        new_time = max(state.time, max(move))
+        new_boat.extend(move)
+        for person in move:
+            new_people.remove(person)
+        new_state = State(new_people, new_boat, new_time)
+        if is_valid(new_state):
+            next_states.append(new_state)
+    return next_states
 
-min_time_required = transfer_family_optimized(transfer_times, max_transfer_time)
-if min_time_required != -1:
-    print("Minimum time required:", min_time_required)
+def bfs():
+    start_state = State([1, 3, 6, 8, 12], [], 0)
+    queue = deque([start_state])
+    solutions = []
+    while queue:
+        current_state = queue.popleft()
+        if current_state.time > 30:
+            continue
+        if not current_state.people:
+            solutions.append(current_state)
+            continue
+        next_states = get_next_states(current_state)
+        for next_state in next_states:
+            queue.append(next_state)
+    return solutions
+
+solutions = bfs()
+if solutions:
+    print("Multiple solutions found within the time constraint:")
+    for i, solution in enumerate(solutions, 1):
+        print(f"Solution {i}:")
+        print("Time taken:", solution.time, "seconds")
+        print("People on the other side:", solution.boat)
+        print()
 else:
-    print("No valid path found within the time constraint.")
+    print("No solutions found within the time constraint.")

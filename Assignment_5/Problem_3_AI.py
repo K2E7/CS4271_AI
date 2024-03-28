@@ -1,13 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
 import numpy as np
-import random
 
 # Constants
 EMPTY = 0
 PLAYER1 = 1
 PLAYER2 = 2
-AI_PLAYER = 3  # New constant for AI player
 ROWS = 6
 COLS = 7
 WINDOW_SIZE = 80
@@ -19,7 +17,7 @@ class Connect4Game:
         self.game_over = False
 
     def drop_disc(self, col):
-        if not self.game_over and self.board[0][col] == EMPTY:
+        if not self.game_over:
             for row in range(ROWS-1, -1, -1):
                 if self.board[row][col] == EMPTY:
                     self.board[row][col] = self.current_player
@@ -69,16 +67,75 @@ class Connect4Game:
     def switch_player(self):
         if self.current_player == PLAYER1:
             self.current_player = PLAYER2
-        elif self.current_player == PLAYER2:
-            self.current_player = AI_PLAYER  # Switch to AI player
         else:
             self.current_player = PLAYER1
 
-    def ai_move(self):
-        if not self.game_over:
-            col = random.randint(0, COLS - 1)
-            self.drop_disc(col)
-            self.switch_player()
+    def get_next_player(self):
+        return PLAYER2 if self.current_player == PLAYER1 else PLAYER1
+
+    def get_next_move(self):
+        for col in range(COLS):
+            if self.is_valid_move(col):
+                # Check if placing a disc in this column leads to a win for the current player
+                if self.check_win_move(col, self.current_player):
+                    return col
+                # Check if placing a disc in this column prevents the opponent from winning
+                elif self.check_win_move(col, self.get_next_player()):
+                    return col
+        # If no winning or blocking move found, prioritize seven formation and middle column placement
+        if self.is_valid_move(COLS // 2):
+            return COLS // 2
+        return self.find_seven_formation()
+
+    def is_valid_move(self, col):
+        return self.board[0][col] == EMPTY
+
+    def check_win_move(self, col, player):
+        temp_board = np.copy(self.board)
+        for row in range(ROWS-1, -1, -1):
+            if temp_board[row][col] == EMPTY:
+                temp_board[row][col] = player
+                if self.check_win(row, col, temp_board, player):
+                    return True
+                break
+        return False
+
+    def find_seven_formation(self):
+        for col in range(COLS):
+            if self.is_valid_move(col):
+                temp_board = np.copy(self.board)
+                for row in range(ROWS-1, -1, -1):
+                    if temp_board[row][col] == EMPTY:
+                        temp_board[row][col] = self.current_player
+                        if self.check_seven_formation(row, col, temp_board):
+                            return col
+                        break
+        return self.find_middle_column()
+
+    def check_seven_formation(self, row, col, board):
+        # Check if placing a disc in this position forms a "seven" formation
+        player = board[row][col]
+        count = 0
+        for r in range(max(row-3, 0), min(row+4, ROWS)):
+            for c in range(max(col-3, 0), min(col+4, COLS)):
+                if board[r][c] == player:
+                    count += 1
+                    if count >= 7:
+                        return True
+                else:
+                    count = 0
+        return False
+
+    def find_middle_column(self):
+        middle_col = COLS // 2
+        for offset in range(1, COLS // 2 + 1):
+            left_col = middle_col - offset
+            right_col = middle_col + offset
+            if self.is_valid_move(left_col):
+                return left_col
+            elif self.is_valid_move(right_col):
+                return right_col
+        return None
 
 class Connect4GUI:
     def __init__(self, root):
@@ -100,9 +157,11 @@ class Connect4GUI:
         reset_button = tk.Button(root, text="Reset Game", width=10, height=2, command=self.reset_game)
         reset_button.pack()
 
-        # Pack AI play button below reset button
-        ai_play_button = tk.Button(root, text="AI Play", width=10, height=2, command=self.ai_play)
-        ai_play_button.pack()
+        # Add AI button and text box
+        ai_button = tk.Button(root, text="AI Move", width=10, height=2, command=self.ai_move)
+        ai_button.pack()
+        self.ai_text = tk.Text(root, height=1, width=20)
+        self.ai_text.pack()
 
     def reset_game(self):
         self.game = Connect4Game()
@@ -145,9 +204,10 @@ class Connect4GUI:
             winner = "Player 1" if self.game.current_player == PLAYER2 else "Player 2"
             messagebox.showinfo("Game Over", f"{winner} wins!")
 
-    def ai_play(self):
-        self.game.ai_move()
-        self.update_board()
+    def ai_move(self):
+        next_move = self.game.get_next_move()
+        self.ai_text.delete("1.0", tk.END)
+        self.ai_text.insert(tk.END, f"AI suggests column {next_move+1}")
 
 root = tk.Tk()
 root.title("Connect 4 Game")

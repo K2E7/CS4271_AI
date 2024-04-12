@@ -1,215 +1,291 @@
-import tkinter as tk
-from tkinter import messagebox
+## Question 3
+
 import numpy as np
+import random
+import pygame
+import sys
+import math
 
-# Constants
+BLUE = (0,0,255)
+BLACK = (50,50,50)
+RED = (255,0,0)
+YELLOW = (255,255,0)
+
+ROW_COUNT = 6
+COLUMN_COUNT = 7
+
+PLAYER = 0
+AI = 1
+
 EMPTY = 0
-PLAYER1 = 1
-PLAYER2 = 2
-ROWS = 6
-COLS = 7
-WINDOW_SIZE = 80
+PLAYER_PIECE = 2
+AI_PIECE = 1
 
-class Connect4Game:
-    def __init__(self):
-        self.board = np.zeros((ROWS, COLS), dtype=int)
-        self.current_player = PLAYER1
-        self.game_over = False
+WINDOW_LENGTH = 4
 
-    def drop_disc(self, col):
-        if not self.game_over:
-            for row in range(ROWS-1, -1, -1):
-                if self.board[row][col] == EMPTY:
-                    self.board[row][col] = self.current_player
-                    self.check_win(row, col)
-                    self.switch_player()
-                    break
+def create_board():
+	board = np.zeros((ROW_COUNT,COLUMN_COUNT))
+	return board
 
-    def check_win(self, row, col):
-        # Check horizontal
-        for c in range(COLS - 3):
-            if self.board[row][c] == self.current_player and \
-               self.board[row][c+1] == self.current_player and \
-               self.board[row][c+2] == self.current_player and \
-               self.board[row][c+3] == self.current_player:
-                self.game_over = True
-                return
+def drop_piece(board, row, col, piece):
+	board[row][col] = piece
 
-        # Check vertical
-        for r in range(ROWS - 3):
-            if self.board[r][col] == self.current_player and \
-               self.board[r+1][col] == self.current_player and \
-               self.board[r+2][col] == self.current_player and \
-               self.board[r+3][col] == self.current_player:
-                self.game_over = True
-                return
+def is_valid_location(board, col):
+	return (board[ROW_COUNT-1][col] == 0)
 
-        # Check diagonal (down-right)
-        for r in range(ROWS - 3):
-            for c in range(COLS - 3):
-                if self.board[r][c] == self.current_player and \
-                   self.board[r+1][c+1] == self.current_player and \
-                   self.board[r+2][c+2] == self.current_player and \
-                   self.board[r+3][c+3] == self.current_player:
-                    self.game_over = True
-                    return
+def get_next_open_row(board, col):
+	for r in range(ROW_COUNT):
+		if(board[r][col] == 0):
+			return r
 
-        # Check diagonal (up-right)
-        for r in range(3, ROWS):
-            for c in range(COLS - 3):
-                if self.board[r][c] == self.current_player and \
-                   self.board[r-1][c+1] == self.current_player and \
-                   self.board[r-2][c+2] == self.current_player and \
-                   self.board[r-3][c+3] == self.current_player:
-                    self.game_over = True
-                    return
+def print_board(board):
+	print(np.flip(board, 0))
 
-    def switch_player(self):
-        if self.current_player == PLAYER1:
-            self.current_player = PLAYER2
-        else:
-            self.current_player = PLAYER1
+def winning_move(board, piece):
+	# Check horizontal locations for win
+	for c in range(COLUMN_COUNT-3):
+		for r in range(ROW_COUNT):
+			if((board[r][c] == piece) and (board[r][c+1] == piece) and (board[r][c+2] == piece) and (board[r][c+3] == piece)):
+				return True
 
-    def get_next_player(self):
-        return PLAYER2 if self.current_player == PLAYER1 else PLAYER1
+	# Check vertical locations for win
+	for c in range(COLUMN_COUNT):
+		for r in range(ROW_COUNT-3):
+			if((board[r][c] == piece) and (board[r+1][c] == piece) and (board[r+2][c] == piece) and (board[r+3][c] == piece)):
+				return True
 
-    def get_next_move(self):
-        for col in range(COLS):
-            if self.is_valid_move(col):
-                # Check if placing a disc in this column leads to a win for the current player
-                if self.check_win_move(col, self.current_player):
-                    return col
-                # Check if placing a disc in this column prevents the opponent from winning
-                elif self.check_win_move(col, self.get_next_player()):
-                    return col
-        # If no winning or blocking move found, prioritize seven formation and middle column placement
-        if self.is_valid_move(COLS // 2):
-            return COLS // 2
-        return self.find_seven_formation()
+	# Check positively sloped diaganols
+	for c in range(COLUMN_COUNT-3):
+		for r in range(ROW_COUNT-3):
+			if((board[r][c] == piece) and (board[r+1][c+1] == piece) and (board[r+2][c+2] == piece) and (board[r+3][c+3] == piece)):
+				return True
 
-    def is_valid_move(self, col):
-        return self.board[0][col] == EMPTY
+	# Check negatively sloped diaganols
+	for c in range(COLUMN_COUNT-3):
+		for r in range(3, ROW_COUNT):
+			if((board[r][c] == piece) and (board[r-1][c+1] == piece) and (board[r-2][c+2] == piece) and (board[r-3][c+3] == piece)):
+				return True
 
-    def check_win_move(self, col, player):
-        temp_board = np.copy(self.board)
-        for row in range(ROWS-1, -1, -1):
-            if temp_board[row][col] == EMPTY:
-                temp_board[row][col] = player
-                if self.check_win(row, col, temp_board, player):
-                    return True
-                break
-        return False
+def evaluate_window(window, piece):
+	score = 0
+	opp_piece = PLAYER_PIECE
+	if piece == PLAYER_PIECE:
+		opp_piece = AI_PIECE
 
-    def find_seven_formation(self):
-        for col in range(COLS):
-            if self.is_valid_move(col):
-                temp_board = np.copy(self.board)
-                for row in range(ROWS-1, -1, -1):
-                    if temp_board[row][col] == EMPTY:
-                        temp_board[row][col] = self.current_player
-                        if self.check_seven_formation(row, col, temp_board):
-                            return col
-                        break
-        return self.find_middle_column()
+	if(window.count(piece) == 4):
+		score += 100
+	elif((window.count(piece) == 3) and (window.count(EMPTY) == 1)):
+		score += 5
+	elif((window.count(piece) == 2) and (window.count(EMPTY) == 2)):
+		score += 2
 
-    def check_seven_formation(self, row, col, board):
-        # Check if placing a disc in this position forms a "seven" formation
-        player = board[row][col]
-        count = 0
-        for r in range(max(row-3, 0), min(row+4, ROWS)):
-            for c in range(max(col-3, 0), min(col+4, COLS)):
-                if board[r][c] == player:
-                    count += 1
-                    if count >= 7:
-                        return True
-                else:
-                    count = 0
-        return False
+	if((window.count(opp_piece) == 3) and (window.count(EMPTY) == 1)):
+		score -= 4
 
-    def find_middle_column(self):
-        middle_col = COLS // 2
-        for offset in range(1, COLS // 2 + 1):
-            left_col = middle_col - offset
-            right_col = middle_col + offset
-            if self.is_valid_move(left_col):
-                return left_col
-            elif self.is_valid_move(right_col):
-                return right_col
-        return None
+	return score
 
-class Connect4GUI:
-    def __init__(self, root):
-        self.root = root
-        self.game = Connect4Game()
-        self.buttons = []
+def score_position(board, piece):
+	score = 0
 
-        self.canvas = tk.Canvas(root, width=COLS * WINDOW_SIZE, height=ROWS * WINDOW_SIZE)
-        self.canvas.pack()
+	# Score center column
+	center_array = [int(i) for i in list(board[:, COLUMN_COUNT//2])]
+	center_count = center_array.count(piece)
+	score += center_count * 3
 
-        self.draw_grid()
+	# Score Horizontal
+	for r in range(ROW_COUNT):
+		row_array = [int(i) for i in list(board[r,:])]
+		for c in range(COLUMN_COUNT-3):
+			window = row_array[c:c+WINDOW_LENGTH]
+			score += evaluate_window(window, piece)
 
-        # Pack column buttons horizontally
-        for col in range(COLS):
-            button = tk.Button(root, text=f"Col {col+1}", width=8, height=2, command=lambda c=col: self.drop_disc(c))
-            button.pack(side="left")
+	# Score Vertical
+	for c in range(COLUMN_COUNT):
+		col_array = [int(i) for i in list(board[:,c])]
+		for r in range(ROW_COUNT-3):
+			window = col_array[r:r+WINDOW_LENGTH]
+			score += evaluate_window(window, piece)
 
-        # Pack reset button below column buttons
-        reset_button = tk.Button(root, text="Reset Game", width=10, height=2, command=self.reset_game)
-        reset_button.pack()
+	# Score positive sloped diagonal
+	for r in range(ROW_COUNT-3):
+		for c in range(COLUMN_COUNT-3):
+			window = [board[r+i][c+i] for i in range(WINDOW_LENGTH)]
+			score += evaluate_window(window, piece)
 
-        # Add AI button and text box
-        ai_button = tk.Button(root, text="AI Move", width=10, height=2, command=self.ai_move)
-        ai_button.pack()
-        self.ai_text = tk.Text(root, height=1, width=20)
-        self.ai_text.pack()
+	for r in range(ROW_COUNT-3):
+		for c in range(COLUMN_COUNT-3):
+			window = [board[r+3-i][c+i] for i in range(WINDOW_LENGTH)]
+			score += evaluate_window(window, piece)
 
-    def reset_game(self):
-        self.game = Connect4Game()
-        self.canvas.delete("disc")  # Clear existing discs
-        self.draw_grid()
+	return score
 
-    def draw_grid(self):
-        for row in range(ROWS):
-            for col in range(COLS):
-                x0 = col * WINDOW_SIZE
-                y0 = row * WINDOW_SIZE
-                x1 = (col + 1) * WINDOW_SIZE
-                y1 = (row + 1) * WINDOW_SIZE
-                self.canvas.create_rectangle(x0, y0, x1, y1, fill="blue")
-                if self.game.board[row][col] == EMPTY:
-                    circle_size = min(WINDOW_SIZE // 2 - 10, ROWS * WINDOW_SIZE // 2 // ROWS - 10) * 2
-                    self.canvas.create_oval(x0 + (WINDOW_SIZE - circle_size) // 2, y0 + (WINDOW_SIZE - circle_size) // 2,
-                                            x0 + (WINDOW_SIZE + circle_size) // 2, y0 + (WINDOW_SIZE + circle_size) // 2,
-                                            fill="white")
+def is_terminal_node(board):
+	return (winning_move(board, PLAYER_PIECE) or (winning_move(board, AI_PIECE)) or (len(get_valid_locations(board)) == 0))
 
-    def drop_disc(self, col):
-        self.game.drop_disc(col)
-        self.update_board()
+def minimax(board, depth, alpha, beta, maximizingPlayer):
+	valid_locations = get_valid_locations(board)
+	is_terminal = is_terminal_node(board)
+	if((depth == 0) or is_terminal):
+		if(is_terminal):
+			if(winning_move(board, AI_PIECE)):
+				return (None, 100000000000000)
+			elif(winning_move(board, PLAYER_PIECE)):
+				return (None, -10000000000000)
+			else: # Game is over, no more valid moves
+				return (None, 0)
+		else: # Depth is zero
+			return (None, score_position(board, AI_PIECE))
+	if(maximizingPlayer):
+		value = -math.inf
+		column = random.choice(valid_locations)
+		for col in valid_locations:
+			row = get_next_open_row(board, col)
+			b_copy = board.copy()
+			drop_piece(b_copy, row, col, AI_PIECE)
+			new_score = minimax(b_copy, depth-1, alpha, beta, False)[1]
+			if(new_score > value):
+				value = new_score
+				column = col
+			alpha = max(alpha, value)
+			if(alpha >= beta):
+				break
+		return column, value
 
-    def update_board(self):
-        self.canvas.delete("disc")  # Clear existing discs
+	else: # Minimizing player
+		value = math.inf
+		column = random.choice(valid_locations)
+		for col in valid_locations:
+			row = get_next_open_row(board, col)
+			b_copy = board.copy()
+			drop_piece(b_copy, row, col, PLAYER_PIECE)
+			new_score = minimax(b_copy, depth-1, alpha, beta, True)[1]
+			if(new_score < value):
+				value = new_score
+				column = col
+			beta = min(beta, value)
+			if(alpha >= beta):
+				break
+		return column, value
 
-        for row in range(ROWS):
-            for col in range(COLS):
-                if self.game.board[row][col] != EMPTY:
-                    disc_color = "yellow" if self.game.board[row][col] == PLAYER1 else "red"
-                    circle_size = min(WINDOW_SIZE // 2 - 10, ROWS * WINDOW_SIZE // 2 // ROWS - 10) * 2
-                    x0 = col * WINDOW_SIZE + (WINDOW_SIZE - circle_size) // 2
-                    y0 = row * WINDOW_SIZE + (WINDOW_SIZE - circle_size) // 2
-                    x1 = x0 + circle_size
-                    y1 = y0 + circle_size
-                    self.canvas.create_oval(x0, y0, x1, y1, fill=disc_color, tags="disc")
+def get_valid_locations(board):
+	valid_locations = []
+	for col in range(COLUMN_COUNT):
+		if(is_valid_location(board, col)):
+			valid_locations.append(col)
+	return valid_locations
 
-        if self.game.game_over:
-            winner = "Player 1" if self.game.current_player == PLAYER2 else "Player 2"
-            messagebox.showinfo("Game Over", f"{winner} wins!")
+def pick_best_move(board, piece):
 
-    def ai_move(self):
-        next_move = self.game.get_next_move()
-        self.ai_text.delete("1.0", tk.END)
-        self.ai_text.insert(tk.END, f"AI suggests column {next_move+1}")
+	valid_locations = get_valid_locations(board)
+	best_score = -10000
+	best_col = random.choice(valid_locations)
+	for col in valid_locations:
+		row = get_next_open_row(board, col)
+		temp_board = board.copy()
+		drop_piece(temp_board, row, col, piece)
+		score = score_position(temp_board, piece)
+		if(score > best_score):
+			best_score = score
+			best_col = col
 
-root = tk.Tk()
-root.title("Connect 4 Game")
-app = Connect4GUI(root)
-root.mainloop()
+	return best_col
+
+def draw_board(board):
+	for c in range(COLUMN_COUNT):
+		for r in range(ROW_COUNT):
+			pygame.draw.rect(screen, BLUE, (c*SQUARESIZE, r*SQUARESIZE+SQUARESIZE, SQUARESIZE, SQUARESIZE))
+			pygame.draw.circle(screen, BLACK, (int(c*SQUARESIZE+SQUARESIZE/2), int(r*SQUARESIZE+SQUARESIZE+SQUARESIZE/2)), RADIUS)
+
+	for c in range(COLUMN_COUNT):
+		for r in range(ROW_COUNT):
+			if(board[r][c] == PLAYER_PIECE):
+				pygame.draw.circle(screen, RED, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
+			elif(board[r][c] == AI_PIECE):
+				pygame.draw.circle(screen, YELLOW, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
+	pygame.display.update()
+
+board = create_board()
+print_board(board)
+game_over = False
+
+pygame.init()
+
+SQUARESIZE = 50
+
+width = COLUMN_COUNT * SQUARESIZE
+height = (ROW_COUNT+1) * SQUARESIZE
+
+size = (width, height)
+
+RADIUS = int(SQUARESIZE/2 - 5)
+
+screen = pygame.display.set_mode(size)
+draw_board(board)
+pygame.display.update()
+
+myfont = pygame.font.SysFont("monospace", 25)
+
+turn = random.randint(PLAYER, AI)
+
+while not game_over:
+
+	for event in pygame.event.get():
+		if(event.type == pygame.QUIT):
+			sys.exit()
+
+		if(event.type == pygame.MOUSEMOTION):
+			pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
+			posx = event.pos[0]
+			if(turn == PLAYER):
+				pygame.draw.circle(screen, RED, (posx, int(SQUARESIZE/2)), RADIUS)
+
+		pygame.display.update()
+
+		if(event.type == pygame.MOUSEBUTTONDOWN):
+			pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
+			# print(event.pos)
+			# Ask for Player 1 Input
+			if(turn == PLAYER):
+				posx = event.pos[0]
+				col = int(math.floor(posx/SQUARESIZE))
+
+				if(is_valid_location(board, col)):
+					row = get_next_open_row(board, col)
+					drop_piece(board, row, col, PLAYER_PIECE)
+
+					if(winning_move(board, PLAYER_PIECE)):
+						label = myfont.render("Player 1 wins!!", 1, RED)
+						screen.blit(label, (40,10))
+						game_over = True
+
+					turn += 1
+					turn = turn % 2
+
+					print_board(board)
+					draw_board(board)
+
+	# Ask for Player 2 Input
+	if((turn == AI) and (not(game_over))):
+
+		# col = random.randint(0, COLUMN_COUNT-1)
+		# col = pick_best_move(board, AI_PIECE)
+		col, minimax_score = minimax(board, 5, -math.inf, math.inf, True)
+
+		if(is_valid_location(board, col)):
+			# pygame.time.wait(500)
+			row = get_next_open_row(board, col)
+			drop_piece(board, row, col, AI_PIECE)
+
+			if(winning_move(board, AI_PIECE)):
+				label = myfont.render("AI wins!!", 1, YELLOW)
+				screen.blit(label, (40,10))
+				game_over = True
+
+			print_board(board)
+			draw_board(board)
+
+			turn += 1
+			turn = turn % 2
+
+	if(game_over):
+		pygame.time.wait(10000)

@@ -86,7 +86,7 @@ class RatPathFinderGUI:
         closed_set = set()
 
         while open_set:
-            _, current = heapq.heappop(open_set)
+            current = open_set[0][1]
 
             if current == self.target:
                 self.path.append(current)
@@ -97,6 +97,7 @@ class RatPathFinderGUI:
                 return
 
             if current in closed_set:
+                heapq.heappop(open_set)
                 continue
 
             closed_set.add(current)
@@ -111,6 +112,8 @@ class RatPathFinderGUI:
                     neighbor.g = tentative_g
                     neighbor.h = self.distance(neighbor, self.target)
                     heapq.heappush(open_set, (neighbor.g + neighbor.h, neighbor))
+
+            heapq.heappop(open_set)
 
         tk.messagebox.showinfo('No Path', 'No path found!')
 

@@ -1,43 +1,50 @@
-def river_crossing_algorithm_with_steps(starter):
-    # Initialize variables
-    first_array = sorted(starter)
-    print(first_array)
-    second_array = []
-    x = 0
-    steps = []
+## Question 4
 
-    while first_array:
-        print(first_array)
-        if not second_array : 
-        # Move fastest two from first array to second array
-            second_array.extend(first_array[:2])
-            first_array = first_array[2:]
-            steps.append((list(first_array), list(second_array), x))
-        else: 
-        # Move slowest two from first array to second array 
-            second_array.extend(first_array[-2:])
-            first_array = first_array[-2:]
-            steps.append((list(first_array), list(second_array), x))
+def dfs(left_bank, right_bank, path, visited, curr_time, TOTAL_TIME, boat_position):
+    if((curr_time >= TOTAL_TIME) or ((tuple(sorted(left_bank)), tuple(sorted(right_bank)), boat_position) in visited)):
+        return
 
-        # Update logger variable x
-        x += max(second_array[-2:]) if len(second_array) >= 2 else 0
+    visited.add((tuple(sorted(left_bank)), tuple(sorted(right_bank)), boat_position))
 
-        if first_array:
-            # Move fastest back from second array to first array
-            first_array.append(min(second_array))
-            second_array.remove(min(second_array))
-            x += min(second_array)
-            steps.append((list(first_array), list(second_array), x))
+    if(not(left_bank)):
+        print("Solution found:\n","\n".join(path))
+        return
 
-    return steps
+    if(boat_position == 'left'):
+        for i, item1 in enumerate(left_bank):
+            new_left_bank = left_bank[:]
+            new_left_bank.remove(item1)
 
-# Test the function with the provided starter array
-starter = [1, 3, 6, 8, 12]
-steps = river_crossing_algorithm_with_steps(starter)
+            dfs(new_left_bank, right_bank, path + [f"Move person with travel time {item1} second(s) to right bank"], visited, curr_time + item1, TOTAL_TIME, 'right')
 
-# Print the steps and logger variable x after each step
-for i, step in enumerate(steps):
-    first_array, second_array, x = step
-    print(f"Step {i+1}: First Array: {first_array}, Second Array: {second_array}, x = {x}")
+            for j, item2 in enumerate(new_left_bank):
+                if(item1 != item2):
+                    new_left_bank_2 = new_left_bank[:]
+                    new_left_bank_2.remove(item2)
+                    new_right_bank = right_bank + [item1, item2]
 
-print("\nFinal Logger variable x after completing the river crossing algorithm:", x)
+                    dfs(new_left_bank_2, new_right_bank, path + [f"Move persons with travel times {item1} and {item2} second(s) to right bank"], visited, curr_time + max(item1, item2), TOTAL_TIME, 'right')
+
+    else:
+        for i, item1 in enumerate(right_bank):
+            new_right_bank = right_bank[:]
+            new_right_bank.remove(item1)
+
+            dfs(left_bank + [item1], new_right_bank, path + [f"Move person with travel time {item1} second(s) to left bank"], visited, curr_time + item1, TOTAL_TIME, 'left')
+
+            for j, item2 in enumerate(new_right_bank):
+                if(item1 != item2):
+                    new_right_bank_2 = new_right_bank[:]
+                    new_right_bank_2.remove(item2)
+                    new_left_bank = left_bank + [item1, item2]
+
+                    dfs(new_left_bank, new_right_bank_2, path + [f"Move persons with travel time {item1} and {item2} second(s) to left bank"], visited, curr_time + max(item1, item2), TOTAL_TIME, 'left')
+
+# Initial values
+TOTAL_TIME = 30
+left_bank = [1, 3, 6, 8, 12]
+right_bank = []
+visited = set()
+
+# Start DFS
+dfs(left_bank, right_bank, [], visited, 0, TOTAL_TIME, 'left')

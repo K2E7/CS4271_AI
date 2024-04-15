@@ -4,7 +4,7 @@ class EightQueensGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Eight Queens Problem")
-        self.size = 8
+        self.size = 6
         self.solution_generator = self.find_all_solutions()
         self.canvas = tk.Canvas(self.root, width=self.size * 50, height=self.size * 50, bg="white")
         self.canvas.pack()
